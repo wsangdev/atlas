@@ -1,0 +1,9 @@
+# Binarios
+*.exe
+bin/
+tmp/
+
+# Variables de entorno (NO subir credenciales)
+.env
+.env.*
+!.env.example
