@@ -30,7 +30,7 @@ func NewCoordinates(lat, long float64) (Coordinates, error) {
 // Position es la entidad central del modulo tracking.
 type Position struct {
 	ID         string
-	Device     string
+	DeviceID   string
 	Coords     Coordinates
 	SpeedKmh   *float64
 	Heading    *float64
