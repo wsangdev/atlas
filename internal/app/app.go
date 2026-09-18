@@ -1,28 +1,41 @@
 package app
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"atlas/internal/core/tracking"
 	"atlas/internal/shared/config"
+	"atlas/internal/shared/ws"
 )
 
 type App struct {
 	cfg    *config.Config
 	db     *gorm.DB
+	hub    *ws.Hub
 	router *gin.Engine
 }
 
-func New(cfg *config.Config, db *gorm.DB) *App {
+func New(cfg *config.Config, db *gorm.DB) (*App, error) {
 	router := gin.New()
 	router.Use(gin.Recovery())
 
-	a := &App{cfg: cfg, db: db, router: router}
-	a.registerRoutes()
-	return a
+	a := &App{
+		cfg:    cfg,
+		db:     db,
+		hub:    ws.NewHub(),
+		router: router,
+	}
+
+	if err := a.registerModules(); err != nil {
+		return nil, err
+	}
+	a.registerSystemRoutes()
+	return a, nil
 }
 
 // Router expone el engine (util para tests con httptest).
@@ -33,12 +46,20 @@ func (a *App) Run() error {
 	return a.router.Run(":" + a.cfg.Port)
 }
 
-func (a *App) registerRoutes() {
-	// Endpoints del sistema
-	a.router.GET("/health", a.health)
+// registerModules es el unico lugar donde se cablean los modulos de negocio.
+func (a *App) registerModules() error {
+	trackingModule, err := tracking.New(a.db, a.hub)
+	if err != nil {
+		return fmt.Errorf("modulo tracking: %w", err)
+	}
+	trackingModule.Register(a.router)
 
-	// Modulos de negocio (se agregan aqui, uno por linea):
-	// tracking.New(a.db).Register(a.router)
+	// Modulos siguientes (fleet, geofencing, alerts...) se agregan aqui.
+	return nil
+}
+
+func (a *App) registerSystemRoutes() {
+	a.router.GET("/health", a.health)
 }
 
 func (a *App) health(c *gin.Context) {

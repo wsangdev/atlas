@@ -21,7 +21,10 @@ func main() {
 		log.Fatalf("Base de Datos: %v", err)
 	}
 
-	application := app.New(cfg, db)
+	application, err := app.New(cfg, db)
+	if err != nil {
+		log.Fatalf("Aplicacion: %v", err)
+	}
 
 	if err := application.Run(); err != nil {
 		log.Fatalf("Servidor: %v", err)
