@@ -1,7 +1,6 @@
 package application
 
 import (
-	"strings"
 	"time"
 
 	"atlas/internal/core/fleet/domain"
@@ -17,7 +16,12 @@ func NewUnassignDevice(assets domain.AssetRepository) *UnassignDevice {
 }
 
 func (uc *UnassignDevice) Execute(assetID string) (domain.Asset, error) {
-	asset, err := uc.assets.FindByID(strings.TrimSpace(assetID))
+	id, err := parseID(assetID)
+	if err != nil {
+		return domain.Asset{}, err
+	}
+
+	asset, err := uc.assets.FindByID(id)
 	if err != nil {
 		return domain.Asset{}, err
 	}

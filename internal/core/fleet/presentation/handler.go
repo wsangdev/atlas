@@ -212,6 +212,7 @@ func mapError(err error) (int, string) {
 	case errors.Is(err, domain.ErrSerialRequired),
 		errors.Is(err, domain.ErrDeviceNameRequired),
 		errors.Is(err, domain.ErrAssetNameRequired),
+		errors.Is(err, domain.ErrInvalidID),
 		errors.Is(err, domain.ErrInvalidAssetType):
 		return http.StatusBadRequest, err.Error()
 	default:

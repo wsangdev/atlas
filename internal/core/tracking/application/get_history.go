@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofrs/uuid/v5"
+
 	"atlas/internal/core/tracking/domain"
 )
 
@@ -31,6 +33,9 @@ func (uc *GetHistory) Execute(input GetHistoryInput) ([]domain.Position, error) 
 	deviceID := strings.TrimSpace(input.DeviceID)
 	if deviceID == "" {
 		return nil, domain.ErrDeviceRequired
+	}
+	if _, err := uuid.FromString(deviceID); err != nil {
+		return nil, domain.ErrInvalidDeviceID
 	}
 	if input.From.IsZero() || input.To.IsZero() || !input.From.Before(input.To) {
 		return nil, ErrInvalidRange

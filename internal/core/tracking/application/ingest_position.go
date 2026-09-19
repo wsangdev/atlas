@@ -26,13 +26,15 @@ type IngestPositionInput struct {
 type IngestPosition struct {
 	repo      domain.PositionRepository
 	publisher PositionPublisher
+	checker   DeviceChecker
 	now       func() time.Time
 }
 
-func NewIngestPosition(repo domain.PositionRepository, publisher PositionPublisher) *IngestPosition {
+func NewIngestPosition(repo domain.PositionRepository, publisher PositionPublisher, checker DeviceChecker) *IngestPosition {
 	return &IngestPosition{
 		repo:      repo,
 		publisher: publisher,
+		checker:   checker,
 		now:       time.Now,
 	}
 }
@@ -41,6 +43,22 @@ func (uc *IngestPosition) Execute(input IngestPositionInput) (domain.Position, e
 	deviceID := strings.TrimSpace(input.DeviceID)
 	if deviceID == "" {
 		return domain.Position{}, domain.ErrDeviceRequired
+	}
+	if _, err := uuid.FromString(deviceID); err != nil {
+		return domain.Position{}, domain.ErrInvalidDeviceID
+	}
+
+	if uc.checker != nil {
+		info, err := uc.checker.CheckDevice(deviceID)
+		if err != nil {
+			return domain.Position{}, err
+		}
+		if !info.Exists {
+			return domain.Position{}, domain.ErrDeviceNotFound
+		}
+		if !info.Active {
+			return domain.Position{}, domain.ErrDeviceInactive
+		}
 	}
 
 	coords, err := domain.NewCoordinates(input.Lat, input.Lng)

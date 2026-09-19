@@ -49,17 +49,19 @@ func (a *App) Run() error {
 
 // registerModules es el unico lugar donde se cablean los modulos de negocio.
 func (a *App) registerModules() error {
-	trackingModule, err := tracking.New(a.db, a.hub)
-	if err != nil {
-		return fmt.Errorf("modulo tracking: %w", err)
-	}
-	trackingModule.Register(a.router)
-
 	fleetModule, err := fleet.New(a.db)
 	if err != nil {
 		return fmt.Errorf("modulo fleet: %w", err)
 	}
 	fleetModule.Register(a.router)
+
+	checker := trackingDeviceChecker{devices: fleetModule.Devices()}
+
+	trackingModule, err := tracking.New(a.db, a.hub, checker)
+	if err != nil {
+		return fmt.Errorf("modulo tracking: %w", err)
+	}
+	trackingModule.Register(a.router)
 
 	// Modulos siguientes (geofencing, alerts...) se agregan aqui.
 	return nil

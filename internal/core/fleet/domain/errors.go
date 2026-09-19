@@ -5,6 +5,7 @@ import "errors"
 var (
 	ErrDeviceNotFound        = errors.New("dispositivo no encontrado")
 	ErrAssetNotFound         = errors.New("activo no encontrado")
+	ErrInvalidID             = errors.New("id invalido")
 	ErrSerialRequired        = errors.New("serial es requerido")
 	ErrSerialDuplicated      = errors.New("serial ya registrado")
 	ErrDeviceNameRequired    = errors.New("nombre del dispositivo es requerido")

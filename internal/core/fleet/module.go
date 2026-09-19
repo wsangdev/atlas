@@ -12,6 +12,7 @@ import (
 // Module es el composition root del modulo fleet (dispositivos + activos).
 type Module struct {
 	handler *presentation.Handler
+	devices *infrastructure.DeviceRepository
 }
 
 func New(db *gorm.DB) (*Module, error) {
@@ -33,8 +34,12 @@ func New(db *gorm.DB) (*Module, error) {
 		application.NewListAssets(assets),
 	)
 
-	return &Module{handler: handler}, nil
+	return &Module{handler: handler, devices: devices}, nil
 }
+
+// Devices expone el repositorio para que app.go construya adaptadores hacia
+// otros modulos (ej. el DeviceChecker de tracking) sin que fleet los conozca.
+func (m *Module) Devices() *infrastructure.DeviceRepository { return m.devices }
 
 func (m *Module) Register(router *gin.Engine) {
 	presentation.RegisterRoutes(router, m.handler)

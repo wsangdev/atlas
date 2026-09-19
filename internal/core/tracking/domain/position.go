@@ -8,6 +8,9 @@ import (
 var (
 	ErrDeviceRequired     = errors.New("device_id es requerido")
 	ErrInvalidCoordinates = errors.New("coordenadas invalidas")
+	ErrDeviceNotFound     = errors.New("dispositivo no encontrado")
+	ErrDeviceInactive     = errors.New("dispositivo inactivo")
+	ErrInvalidDeviceID    = errors.New("device_id invalido")
 )
 
 type Coordinates struct {

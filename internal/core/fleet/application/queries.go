@@ -1,8 +1,6 @@
 package application
 
 import (
-	"strings"
-
 	"atlas/internal/core/fleet/domain"
 )
 
@@ -17,7 +15,11 @@ func NewGetDevice(repo domain.DeviceRepository) *GetDevice {
 }
 
 func (q *GetDevice) Execute(id string) (*domain.Device, error) {
-	device, err := q.repo.FindByID(strings.TrimSpace(id))
+	deviceID, err := parseID(id)
+	if err != nil {
+		return nil, err
+	}
+	device, err := q.repo.FindByID(deviceID)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +50,11 @@ func NewGetAsset(repo domain.AssetRepository) *GetAsset {
 }
 
 func (q *GetAsset) Execute(id string) (*domain.Asset, error) {
-	asset, err := q.repo.FindByID(strings.TrimSpace(id))
+	assetID, err := parseID(id)
+	if err != nil {
+		return nil, err
+	}
+	asset, err := q.repo.FindByID(assetID)
 	if err != nil {
 		return nil, err
 	}

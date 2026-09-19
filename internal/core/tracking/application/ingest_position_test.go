@@ -4,8 +4,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid/v5"
+
 	"atlas/internal/core/tracking/domain"
 )
+
+// nuevoID genera un UUID valido para usar como device_id en los tests.
+func nuevoID(t *testing.T) string {
+	t.Helper()
+	id, err := uuid.NewV7()
+	if err != nil {
+		t.Fatalf("generando uuid: %v", err)
+	}
+	return id.String()
+}
 
 type fakeRepo struct {
 	saved     []domain.Position
@@ -45,12 +57,23 @@ func (f *fakePublisher) PublishPosition(p domain.Position) {
 	f.published = append(f.published, p)
 }
 
+type fakeChecker struct {
+	exists bool
+	active bool
+}
+
+func (f fakeChecker) CheckDevice(deviceID string) (DeviceInfo, error) {
+	return DeviceInfo{Exists: f.exists, Active: f.active}, nil
+}
+
+func dispositivoActivo() fakeChecker { return fakeChecker{exists: true, active: true} }
+
 func TestIngestPositionOK(t *testing.T) {
 	repo := &fakeRepo{}
 	pub := &fakePublisher{}
-	uc := NewIngestPosition(repo, pub)
+	uc := NewIngestPosition(repo, pub, dispositivoActivo())
 
-	pos, err := uc.Execute(IngestPositionInput{DeviceID: "dev-1", Lat: -12.1, Lng: -77.0})
+	pos, err := uc.Execute(IngestPositionInput{DeviceID: nuevoID(t), Lat: -12.1, Lng: -77.0})
 	if err != nil {
 		t.Fatalf("no esperaba error: %v", err)
 	}
@@ -69,16 +92,16 @@ func TestIngestPositionOK(t *testing.T) {
 }
 
 func TestIngestPositionCoordenadasInvalidas(t *testing.T) {
-	uc := NewIngestPosition(&fakeRepo{}, &fakePublisher{})
+	uc := NewIngestPosition(&fakeRepo{}, &fakePublisher{}, dispositivoActivo())
 
-	_, err := uc.Execute(IngestPositionInput{DeviceID: "dev-1", Lat: 0, Lng: 0})
+	_, err := uc.Execute(IngestPositionInput{DeviceID: nuevoID(t), Lat: 0, Lng: 0})
 	if err != domain.ErrInvalidCoordinates {
 		t.Fatalf("err = %v, queria ErrInvalidCoordinates", err)
 	}
 }
 
 func TestIngestPositionDeviceRequerido(t *testing.T) {
-	uc := NewIngestPosition(&fakeRepo{}, &fakePublisher{})
+	uc := NewIngestPosition(&fakeRepo{}, &fakePublisher{}, dispositivoActivo())
 
 	_, err := uc.Execute(IngestPositionInput{Lat: -12.1, Lng: -77.0})
 	if err != domain.ErrDeviceRequired {
@@ -86,11 +109,38 @@ func TestIngestPositionDeviceRequerido(t *testing.T) {
 	}
 }
 
+func TestIngestPositionDeviceNoExiste(t *testing.T) {
+	uc := NewIngestPosition(&fakeRepo{}, &fakePublisher{}, fakeChecker{exists: false})
+
+	_, err := uc.Execute(IngestPositionInput{DeviceID: nuevoID(t), Lat: -12.1, Lng: -77.0})
+	if err != domain.ErrDeviceNotFound {
+		t.Fatalf("err = %v, queria ErrDeviceNotFound", err)
+	}
+}
+
+func TestIngestPositionDeviceIDInvalido(t *testing.T) {
+	uc := NewIngestPosition(&fakeRepo{}, &fakePublisher{}, dispositivoActivo())
+
+	_, err := uc.Execute(IngestPositionInput{DeviceID: "no-es-uuid", Lat: -12.1, Lng: -77.0})
+	if err != domain.ErrInvalidDeviceID {
+		t.Fatalf("err = %v, queria ErrInvalidDeviceID", err)
+	}
+}
+
+func TestIngestPositionDeviceInactivo(t *testing.T) {
+	uc := NewIngestPosition(&fakeRepo{}, &fakePublisher{}, fakeChecker{exists: true, active: false})
+
+	_, err := uc.Execute(IngestPositionInput{DeviceID: nuevoID(t), Lat: -12.1, Lng: -77.0})
+	if err != domain.ErrDeviceInactive {
+		t.Fatalf("err = %v, queria ErrDeviceInactive", err)
+	}
+}
+
 func TestGetHistoryRangoInvalido(t *testing.T) {
 	uc := NewGetHistory(&fakeRepo{})
 
 	_, err := uc.Execute(GetHistoryInput{
-		DeviceID: "dev-1",
+		DeviceID: nuevoID(t),
 		From:     time.Now(),
 		To:       time.Now().Add(-time.Hour),
 	})

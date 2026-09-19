@@ -141,7 +141,12 @@ func positionResponse(p domain.Position) gin.H {
 
 func mapError(err error) (int, string) {
 	switch {
+	case errors.Is(err, domain.ErrDeviceNotFound):
+		return http.StatusNotFound, err.Error()
+	case errors.Is(err, domain.ErrDeviceInactive):
+		return http.StatusConflict, err.Error()
 	case errors.Is(err, domain.ErrDeviceRequired),
+		errors.Is(err, domain.ErrInvalidDeviceID),
 		errors.Is(err, domain.ErrInvalidCoordinates),
 		errors.Is(err, application.ErrInvalidRange):
 		return http.StatusBadRequest, err.Error()

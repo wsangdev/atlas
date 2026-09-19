@@ -17,7 +17,7 @@ type Module struct {
 	hub     *ws.Hub
 }
 
-func New(db *gorm.DB, hub *ws.Hub) (*Module, error) {
+func New(db *gorm.DB, hub *ws.Hub, checker application.DeviceChecker) (*Module, error) {
 	if err := infrastructure.Migrate(db); err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func New(db *gorm.DB, hub *ws.Hub) (*Module, error) {
 	repo := infrastructure.NewPositionRepository(db)
 	publisher := infrastructure.NewWSPublisher(hub)
 
-	ingest := application.NewIngestPosition(repo, publisher)
+	ingest := application.NewIngestPosition(repo, publisher, checker)
 	latest := application.NewGetLatestPosition(repo)
 	history := application.NewGetHistory(repo)
 

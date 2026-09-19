@@ -1,7 +1,6 @@
 package application
 
 import (
-	"strings"
 	"time"
 
 	"atlas/internal/core/fleet/domain"
@@ -25,7 +24,12 @@ func NewAssignDevice(assets domain.AssetRepository, devices domain.DeviceReposit
 }
 
 func (uc *AssignDevice) Execute(input AssignDeviceInput) (domain.Asset, error) {
-	asset, err := uc.assets.FindByID(strings.TrimSpace(input.AssetID))
+	assetID, err := parseID(input.AssetID)
+	if err != nil {
+		return domain.Asset{}, err
+	}
+
+	asset, err := uc.assets.FindByID(assetID)
 	if err != nil {
 		return domain.Asset{}, err
 	}
@@ -33,7 +37,12 @@ func (uc *AssignDevice) Execute(input AssignDeviceInput) (domain.Asset, error) {
 		return domain.Asset{}, domain.ErrAssetNotFound
 	}
 
-	device, err := uc.devices.FindByID(strings.TrimSpace(input.DeviceID))
+	deviceID, err := parseID(input.DeviceID)
+	if err != nil {
+		return domain.Asset{}, err
+	}
+
+	device, err := uc.devices.FindByID(deviceID)
 	if err != nil {
 		return domain.Asset{}, err
 	}
