@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"atlas/internal/core/fleet"
 	"atlas/internal/core/tracking"
 	"atlas/internal/shared/config"
 	"atlas/internal/shared/ws"
@@ -54,7 +55,13 @@ func (a *App) registerModules() error {
 	}
 	trackingModule.Register(a.router)
 
-	// Modulos siguientes (fleet, geofencing, alerts...) se agregan aqui.
+	fleetModule, err := fleet.New(a.db)
+	if err != nil {
+		return fmt.Errorf("modulo fleet: %w", err)
+	}
+	fleetModule.Register(a.router)
+
+	// Modulos siguientes (geofencing, alerts...) se agregan aqui.
 	return nil
 }
 
