@@ -41,6 +41,6 @@ func New(db *gorm.DB) (*Module, error) {
 // otros modulos (ej. el DeviceChecker de tracking) sin que fleet los conozca.
 func (m *Module) Devices() *infrastructure.DeviceRepository { return m.devices }
 
-func (m *Module) Register(router *gin.Engine) {
-	presentation.RegisterRoutes(router, m.handler)
+func (m *Module) Register(router *gin.Engine, adminAuth gin.HandlerFunc) {
+	presentation.RegisterRoutes(router, m.handler, adminAuth)
 }

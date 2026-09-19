@@ -5,6 +5,7 @@ import "os"
 type Config struct {
 	Port        string
 	DatabaseURL string
+	AdminAPIKey string
 }
 
 func Load() *Config {
@@ -15,5 +16,6 @@ func Load() *Config {
 	return &Config{
 		Port:        port,
 		DatabaseURL: os.Getenv("DATABASE_URL"),
+		AdminAPIKey: os.Getenv("ADMIN_API_KEY"),
 	}
 }

@@ -66,7 +66,11 @@ func (h *Handler) CreateDevice(c *gin.Context) {
 		c.JSON(status, gin.H{"message": message})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"data": deviceResponse(device)})
+
+	// La API key en claro solo se muestra en la creacion.
+	data := deviceResponse(device.Device)
+	data["api_key"] = device.APIKey
+	c.JSON(http.StatusCreated, gin.H{"data": data})
 }
 
 func (h *Handler) ListDevices(c *gin.Context) {

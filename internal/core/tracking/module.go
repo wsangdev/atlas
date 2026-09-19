@@ -36,8 +36,8 @@ func New(db *gorm.DB, hub *ws.Hub, checker application.DeviceChecker) (*Module, 
 }
 
 // Register expone las rutas del modulo (HTTP + WebSocket).
-func (m *Module) Register(router *gin.Engine) {
-	presentation.RegisterRoutes(router, m.handler)
+func (m *Module) Register(router *gin.Engine, adminAuth, deviceAuth gin.HandlerFunc) {
+	presentation.RegisterRoutes(router, m.handler, adminAuth, deviceAuth)
 
 	router.GET("/ws/tracking", func(c *gin.Context) {
 		_ = m.hub.Melody().HandleRequest(c.Writer, c.Request)

@@ -4,14 +4,17 @@ import "time"
 
 // Device es el rastreador fisico (IMEI/serial). Hoy la ingesta es por HTTP;
 // manana puede ser MQTT o TCP y el Device no cambia.
+// APIKeyHash guarda el hash de su API key: la key en claro solo se muestra una
+// vez al crear el dispositivo.
 type Device struct {
-	ID        string
-	Serial    string
-	Name      string
-	Protocol  string
-	Active    bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID         string
+	Serial     string
+	Name       string
+	Protocol   string
+	Active     bool
+	APIKeyHash string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type DeviceRepository interface {

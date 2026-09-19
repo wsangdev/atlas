@@ -10,6 +10,7 @@ import (
 
 	"atlas/internal/core/fleet"
 	"atlas/internal/core/tracking"
+	"atlas/internal/shared/auth"
 	"atlas/internal/shared/config"
 	"atlas/internal/shared/ws"
 )
@@ -43,6 +44,9 @@ func New(cfg *config.Config, db *gorm.DB) (*App, error) {
 func (a *App) Router() *gin.Engine { return a.router }
 
 func (a *App) Run() error {
+	if a.cfg.AdminAPIKey == "" {
+		log.Printf("ADVERTENCIA: ADMIN_API_KEY vacia; las rutas de admin quedaran bloqueadas")
+	}
 	log.Printf("atlas escuchando en :%s", a.cfg.Port)
 	return a.router.Run(":" + a.cfg.Port)
 }
@@ -53,15 +57,18 @@ func (a *App) registerModules() error {
 	if err != nil {
 		return fmt.Errorf("modulo fleet: %w", err)
 	}
-	fleetModule.Register(a.router)
+
+	adminAuth := auth.AdminKey(a.cfg.AdminAPIKey)
+	deviceAuth := auth.DeviceKey(deviceKeyVerifier{devices: fleetModule.Devices()})
+
+	fleetModule.Register(a.router, adminAuth)
 
 	checker := trackingDeviceChecker{devices: fleetModule.Devices()}
-
 	trackingModule, err := tracking.New(a.db, a.hub, checker)
 	if err != nil {
 		return fmt.Errorf("modulo tracking: %w", err)
 	}
-	trackingModule.Register(a.router)
+	trackingModule.Register(a.router, adminAuth, deviceAuth)
 
 	// Modulos siguientes (geofencing, alerts...) se agregan aqui.
 	return nil

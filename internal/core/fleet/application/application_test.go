@@ -98,15 +98,21 @@ func TestCreateDeviceGuardaConUUID(t *testing.T) {
 	repo := newFakeDeviceRepo()
 	uc := NewCreateDevice(repo)
 
-	device, err := uc.Execute(CreateDeviceInput{Serial: "IMEI-001", Name: "Tracker 1"})
+	result, err := uc.Execute(CreateDeviceInput{Serial: "IMEI-001", Name: "Tracker 1"})
 	if err != nil {
 		t.Fatalf("no esperaba error: %v", err)
 	}
-	if device.ID == "" {
+	if result.Device.ID == "" {
 		t.Fatal("esperaba ID generado")
 	}
-	if device.Protocol != "http" {
-		t.Fatalf("protocol = %q, queria http", device.Protocol)
+	if result.Device.Protocol != "http" {
+		t.Fatalf("protocol = %q, queria http", result.Device.Protocol)
+	}
+	if result.APIKey == "" {
+		t.Fatal("esperaba API key generada")
+	}
+	if result.Device.APIKeyHash == "" || result.Device.APIKeyHash == result.APIKey {
+		t.Fatal("esperaba hash de la API key (no la key en claro)")
 	}
 	if len(repo.devices) != 1 {
 		t.Fatalf("devices = %d, queria 1", len(repo.devices))
@@ -140,10 +146,11 @@ func TestAssignDeviceYaAsignado(t *testing.T) {
 	devices := newFakeDeviceRepo()
 	assets := newFakeAssetRepo()
 
-	device, err := NewCreateDevice(devices).Execute(CreateDeviceInput{Serial: "IMEI-100", Name: "Tracker 100"})
+	deviceResult, err := NewCreateDevice(devices).Execute(CreateDeviceInput{Serial: "IMEI-100", Name: "Tracker 100"})
 	if err != nil {
 		t.Fatalf("crear device: %v", err)
 	}
+	device := deviceResult.Device
 
 	createAsset := NewCreateAsset(assets)
 	assetA, err := createAsset.Execute(CreateAssetInput{Name: "Moto A", Type: "moto"})

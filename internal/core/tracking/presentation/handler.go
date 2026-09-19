@@ -10,6 +10,7 @@ import (
 
 	"atlas/internal/core/tracking/application"
 	"atlas/internal/core/tracking/domain"
+	"atlas/internal/shared/auth"
 )
 
 type Handler struct {
@@ -27,7 +28,7 @@ func NewHandler(
 }
 
 type ingestPositionRequest struct {
-	DeviceID   string     `json:"device_id" binding:"required"`
+	DeviceID   string     `json:"device_id"` // opcional: debe coincidir con el autenticado
 	Lat        float64    `json:"lat"`
 	Lng        float64    `json:"lng"`
 	SpeedKmh   *float64   `json:"speed_kmh"`
@@ -38,15 +39,26 @@ type ingestPositionRequest struct {
 }
 
 // Ingest recibe una posicion nueva (POST /api/tracking/positions).
+// El device_id sale del dispositivo autenticado (middleware), no del body.
 func (h *Handler) Ingest(c *gin.Context) {
+	deviceID, ok := auth.DeviceIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "dispositivo no autenticado"})
+		return
+	}
+
 	var req ingestPositionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "payload invalido", "error": err.Error()})
 		return
 	}
+	if req.DeviceID != "" && req.DeviceID != deviceID {
+		c.JSON(http.StatusForbidden, gin.H{"message": "device_id no coincide con el dispositivo autenticado"})
+		return
+	}
 
 	position, err := h.ingest.Execute(application.IngestPositionInput{
-		DeviceID:   req.DeviceID,
+		DeviceID:   deviceID,
 		Lat:        req.Lat,
 		Lng:        req.Lng,
 		SpeedKmh:   req.SpeedKmh,

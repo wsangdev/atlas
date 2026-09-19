@@ -2,9 +2,9 @@ package presentation
 
 import "github.com/gin-gonic/gin"
 
-// RegisterRoutes expone los endpoints del modulo fleet.
-func RegisterRoutes(router *gin.Engine, h *Handler) {
-	group := router.Group("/api/fleet")
+// RegisterRoutes expone los endpoints del modulo fleet (solo admin).
+func RegisterRoutes(router *gin.Engine, h *Handler, adminAuth gin.HandlerFunc) {
+	group := router.Group("/api/fleet", adminAuth)
 	{
 		group.POST("/devices", h.CreateDevice)
 		group.GET("/devices", h.ListDevices)
